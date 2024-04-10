@@ -40,8 +40,7 @@ func Run(configPath, envPath string) {
 		}
 	}()
 
-	logger.Info("Server started")
-
+	logger.Info("Server started at ", cfg.HTTP.Host, ":", cfg.HTTP.Port)
 	// Graceful Shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)

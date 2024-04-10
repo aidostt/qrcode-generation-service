@@ -5,6 +5,8 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+const size = 256
+
 type GeneratorService struct {
 	domain string
 }
@@ -15,9 +17,8 @@ func NewGeneratorService(domain string) *GeneratorService {
 	}
 }
 
-func (s *GeneratorService) Generate() ([]byte, error) {
-
-	qrCode, err := qrcode.Encode(code.Content, qrcode.Medium, code.Size)
+func (s *GeneratorService) GenerateQR(content string) ([]byte, error) {
+	qrCode, err := qrcode.Encode(content, qrcode.Low, size)
 	if err != nil {
 		return nil, fmt.Errorf("could not generate a QR code: %v", err)
 	}

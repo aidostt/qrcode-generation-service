@@ -10,6 +10,10 @@ type Handler struct {
 	services *service.Services
 }
 
+type QrCodeInput struct {
+	Content string `json:"content"`
+}
+
 func NewHandler(services *service.Services) *Handler {
 	return &Handler{
 		services: services,
@@ -44,5 +48,20 @@ func (h *Handler) Init() *gin.Engine {
 }
 
 func (h *Handler) initHandlers(api *gin.RouterGroup) {
+	api.POST("/generate", h.Generate)
+}
 
+func (h *Handler) Generate(c *gin.Context) {
+	var inp QrCodeInput
+	if err := c.BindJSON(&inp); err != nil {
+		newResponse(c, http.StatusBadRequest, "invalid input body")
+		return
+	}
+	qr, err := h.services.QrCode.GenerateQR(inp.Content)
+	if err != nil {
+		newResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	//c.Header("Content-Type", "image/png")
+	c.JSON(http.StatusOK, qr)
 }

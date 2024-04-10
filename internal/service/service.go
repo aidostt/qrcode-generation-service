@@ -19,7 +19,7 @@ type QRCodeInput struct {
 }
 
 type QRCode interface {
-	Generate() ([]byte, error)
+	GenerateQR(string) ([]byte, error)
 	//AddWatermark(ctx context.Context) ([]byte, error)
 }
 
