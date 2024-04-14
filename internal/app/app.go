@@ -12,6 +12,7 @@ import (
 	"qrcode-generation-service/internal/delivery"
 	"qrcode-generation-service/internal/server"
 	"qrcode-generation-service/internal/service"
+	"qrcode-generation-service/pkg/dialog"
 	"qrcode-generation-service/pkg/logger"
 	"syscall"
 )
@@ -23,15 +24,14 @@ func Run(configPath, envPath string) {
 
 		return
 	}
-
 	// Dependencies
-
+	dial := dialog.NewDialog(cfg.Authority, fmt.Sprintf("%v:%v", cfg.Users.Host, cfg.Users.Port), fmt.Sprintf("%v:%v", cfg.Reservations.Host, cfg.Reservations.Port))
 	services := service.NewServices(service.Dependencies{
 		Environment: cfg.Environment,
 		Domain:      cfg.GRPC.Host,
+		Dialog:      dial,
 	})
 	handlers := delivery.NewHandler(services)
-
 	// GRPC Server
 	srv := server.NewServer()
 	proto.RegisterQRServer(srv.GrpcServer, handlers)

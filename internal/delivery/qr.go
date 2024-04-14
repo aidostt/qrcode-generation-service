@@ -21,5 +21,26 @@ func (h *Handler) Generate(ctx context.Context, input *proto.GenerateRequest) (*
 }
 
 func (h *Handler) Scan(ctx context.Context, input *proto.ScanRequest) (*proto.ScanResponse, error) {
-	return nil, nil
+	if input.UserID == "" {
+		return nil, status.Error(codes.InvalidArgument, "user id is required")
+	}
+	if input.ReservationID == "" {
+		return nil, status.Error(codes.InvalidArgument, "reservation id is required")
+	}
+	user, restaurant, err := h.services.QrCode.ScanQR(input.GetUserID(), input.GetReservationID())
+	//below is exampled error handling
+	if err != nil {
+		//TODO: handle all errors properly
+		logger.Error(err)
+		return nil, status.Error(codes.Internal, "failed to scan QR")
+	}
+	return &proto.ScanResponse{
+		UserName:          user.Name,
+		UserSurname:       user.Surname,
+		UserPhone:         user.Phone,
+		UserEmail:         user.Email,
+		RestaurantName:    restaurant.Name,
+		RestaurantAddress: restaurant.Address,
+		TableID:           restaurant.Table,
+	}, nil
 }

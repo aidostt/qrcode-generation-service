@@ -10,20 +10,28 @@ import (
 
 const (
 	defaultGRPCPort = "443"
-
-	EnvLocal = "local"
+	authority       = "qrcode-generation-service"
+	EnvLocal        = "local"
 )
 
 type (
 	Config struct {
-		Environment string
-		GRPC        GRPCConfig `mapstructure:"grpc"`
+		Authority    string
+		Environment  string
+		GRPC         GRPCConfig         `mapstructure:"grpc"`
+		Users        MicroserviceConfig `mapstructure:"userMicroservice"`
+		Reservations MicroserviceConfig `mapstructure:"reservationMicroservice"`
 	}
 
 	GRPCConfig struct {
 		Host    string        `mapstructure:"host"`
 		Port    string        `mapstructure:"port"`
 		Timeout time.Duration `mapstructure:"timeout"`
+	}
+
+	MicroserviceConfig struct {
+		Host string `mapstructure:"host"`
+		Port string `mapstructure:"port"`
 	}
 )
 
@@ -45,6 +53,12 @@ func Init(configsDir, envDir string) (*Config, error) {
 }
 
 func unmarshal(cfg *Config) error {
+	if err := viper.UnmarshalKey("userMicroservice", &cfg.Users); err != nil {
+		return err
+	}
+	if err := viper.UnmarshalKey("reservationMicroservice", &cfg.Reservations); err != nil {
+		return err
+	}
 	return viper.UnmarshalKey("grpc", &cfg.GRPC)
 }
 
@@ -52,7 +66,8 @@ func setFromEnv(cfg *Config) {
 
 	cfg.GRPC.Host = os.Getenv("GRPC_HOST")
 
-	cfg.Environment = "development"
+	cfg.Environment = EnvLocal
+	cfg.Authority = authority
 }
 
 func parseConfigFile(folder, env string) error {
