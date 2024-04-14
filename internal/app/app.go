@@ -1,8 +1,10 @@
 package app
 
 import (
-	"context"
 	"errors"
+	"fmt"
+	proto "github.com/aidostt/protos/gen/go/reservista/qr"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,7 +14,6 @@ import (
 	"qrcode-generation-service/internal/service"
 	"qrcode-generation-service/pkg/logger"
 	"syscall"
-	"time"
 )
 
 func Run(configPath, envPath string) {
@@ -27,32 +28,30 @@ func Run(configPath, envPath string) {
 
 	services := service.NewServices(service.Dependencies{
 		Environment: cfg.Environment,
-		Domain:      cfg.HTTP.Host,
+		Domain:      cfg.GRPC.Host,
 	})
 	handlers := delivery.NewHandler(services)
 
-	// HTTP Server
-	srv := server.NewServer(cfg, handlers.Init())
-
+	// GRPC Server
+	srv := server.NewServer()
+	proto.RegisterQRServer(srv.GrpcServer, handlers)
+	l, err := net.Listen("tcp", fmt.Sprintf("%v:%v", cfg.GRPC.Host, cfg.GRPC.Port))
+	if err != nil {
+		logger.Errorf("error occurred while getting listener for the server: %s\n", err.Error())
+		return
+	}
 	go func() {
-		if err := srv.Run(); !errors.Is(err, http.ErrServerClosed) {
-			logger.Errorf("error occurred while running http server: %s\n", err.Error())
+		if err := srv.Run(l); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Errorf("error occurred while running grpc server: %s\n", err.Error())
 		}
 	}()
 
-	logger.Info("Server started at ", cfg.HTTP.Host, ":", cfg.HTTP.Port)
+	logger.Info("Server started at: " + cfg.GRPC.Host + ":" + cfg.GRPC.Port)
+
 	// Graceful Shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 
 	<-quit
-
-	const timeout = 5 * time.Second
-
-	ctx, shutdown := context.WithTimeout(context.Background(), timeout)
-	defer shutdown()
-
-	if err := srv.Stop(ctx); err != nil {
-		logger.Errorf("failed to stop server: %v", err)
-	}
+	srv.Stop()
 }
