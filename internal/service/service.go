@@ -1,6 +1,10 @@
 package service
 
-import "qrcode-generation-service/pkg/dialog"
+import (
+	"context"
+	"io"
+	"qrcode-generation-service/pkg/dialog"
+)
 
 type RestaurantInfo struct {
 	Name            string
@@ -24,8 +28,10 @@ type QRCodeInput struct {
 
 type QRCode interface {
 	GenerateQR(string) ([]byte, error)
-	ScanQR(string, string) (UserInfo, RestaurantInfo, error)
-	//AddWatermark(ctx context.Context) ([]byte, error)
+	ScanQR(context.Context, string, string) (UserInfo, RestaurantInfo, error)
+	GenerateQRWithWatermark([]byte, string) ([]byte, error)
+	AddWatermark([]byte, []byte) ([]byte, error)
+	ResizeWatermark(io.Reader, uint) ([]byte, error)
 }
 
 type Services struct {

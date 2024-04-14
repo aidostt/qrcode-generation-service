@@ -27,7 +27,7 @@ func (h *Handler) Scan(ctx context.Context, input *proto.ScanRequest) (*proto.Sc
 	if input.ReservationID == "" {
 		return nil, status.Error(codes.InvalidArgument, "reservation id is required")
 	}
-	user, restaurant, err := h.services.QrCode.ScanQR(input.GetUserID(), input.GetReservationID())
+	user, restaurant, err := h.services.QrCode.ScanQR(ctx, input.GetUserID(), input.GetReservationID())
 	//below is exampled error handling
 	if err != nil {
 		//TODO: handle all errors properly
