@@ -45,7 +45,6 @@ func (s *Service) ScanQR(ctx context.Context, userID string, reservationID strin
 		return UserInfo{}, RestaurantInfo{}, err
 	}
 	client := user_proto.NewUserClient(conn)
-
 	userResponse, err := client.GetByID(ctx, &user_proto.GetRequest{UserId: userID})
 	if err != nil {
 		return UserInfo{}, RestaurantInfo{}, err

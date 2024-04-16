@@ -38,7 +38,7 @@ type (
 func Init(configsDir, envDir string) (*Config, error) {
 	populateDefaults()
 	loadEnvVariables(envDir)
-	if err := parseConfigFile(configsDir, ""); err != nil {
+	if err := parseConfigFile(configsDir); err != nil {
 		return nil, err
 	}
 
@@ -70,15 +70,13 @@ func setFromEnv(cfg *Config) {
 	cfg.Authority = authority
 }
 
-func parseConfigFile(folder, env string) error {
+func parseConfigFile(folder string) error {
 	viper.AddConfigPath(folder)
 	viper.SetConfigName("main")
 
 	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
-
-	viper.SetConfigName(env)
 
 	return viper.MergeInConfig()
 }
