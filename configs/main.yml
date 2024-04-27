@@ -1,5 +1,5 @@
 grpc:
-  port: 4040
+  port: 7070
   timeout: 5s
 
 
@@ -10,4 +10,4 @@ userMicroservice:
 
 reservationMicroservice:
   host: localhost
-  port: 6060
+  port: 9090

@@ -2,9 +2,11 @@ package delivery
 
 import (
 	"context"
+	"errors"
 	proto "github.com/aidostt/protos/gen/go/reservista/qr"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"qrcode-generation-service/internal/domain"
 	"qrcode-generation-service/pkg/logger"
 )
 
@@ -27,12 +29,15 @@ func (h *Handler) Scan(ctx context.Context, input *proto.ScanRequest) (*proto.Sc
 	if input.ReservationID == "" {
 		return nil, status.Error(codes.InvalidArgument, "reservation id is required")
 	}
-	user, restaurant, err := h.services.QrCode.ScanQR(ctx, input.GetUserID(), input.GetReservationID())
-	//below is exampled error handling
+	user, restaurant, reservation, err := h.services.QrCode.ScanQR(ctx, input.GetUserID(), input.GetReservationID())
 	if err != nil {
-		//TODO: handle all errors properly
 		logger.Error(err)
-		return nil, status.Error(codes.Internal, "failed to scan QR")
+		switch {
+		case errors.Is(err, domain.ErrUnauthorized):
+			return nil, status.Error(codes.Unauthenticated, domain.ErrUnauthorized.Error())
+		default:
+			return nil, status.Error(codes.Internal, "failed to scan QR")
+		}
 	}
 	return &proto.ScanResponse{
 		UserName:          user.Name,
@@ -41,6 +46,8 @@ func (h *Handler) Scan(ctx context.Context, input *proto.ScanRequest) (*proto.Sc
 		UserEmail:         user.Email,
 		RestaurantName:    restaurant.Name,
 		RestaurantAddress: restaurant.Address,
-		TableID:           restaurant.Table,
+		//RestaurantContact: restaurant.Contact,
+		TableID:         reservation.Table,
+		ReservationTime: reservation.ReservationTime,
 	}, nil
 }

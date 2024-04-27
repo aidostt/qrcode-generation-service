@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	user_proto "github.com/aidostt/protos/gen/go/reservista/user"
+	proto_reservation "github.com/aidostt/protos/gen/go/reservista/reservation"
+	"github.com/aidostt/protos/gen/go/reservista/user"
 	"github.com/nfnt/resize"
 	"github.com/skip2/go-qrcode"
 	"image"
 	"image/draw"
 	"image/png"
 	"io"
+	"qrcode-generation-service/internal/domain"
 	"qrcode-generation-service/pkg/dialog"
 )
 
@@ -38,16 +40,16 @@ func (s *Service) GenerateQR(content string) ([]byte, error) {
 	return qrCode, nil
 }
 
-func (s *Service) ScanQR(ctx context.Context, userID string, reservationID string) (UserInfo, RestaurantInfo, error) {
-	conn, err := s.dialog.NewConnection(s.dialog.Addresses.Users)
-	defer conn.Close()
+func (s *Service) ScanQR(ctx context.Context, userID string, reservationID string) (UserInfo, RestaurantInfo, ReservationInfo, error) {
+	userConn, err := s.dialog.NewConnection(s.dialog.Addresses.Users)
+	defer userConn.Close()
 	if err != nil {
-		return UserInfo{}, RestaurantInfo{}, err
+		return UserInfo{}, RestaurantInfo{}, ReservationInfo{}, err
 	}
-	client := user_proto.NewUserClient(conn)
-	userResponse, err := client.GetByID(ctx, &user_proto.GetRequest{UserId: userID})
+	userClient := proto_user.NewUserClient(userConn)
+	userResponse, err := userClient.GetByID(ctx, &proto_user.GetRequest{UserId: userID})
 	if err != nil {
-		return UserInfo{}, RestaurantInfo{}, err
+		return UserInfo{}, RestaurantInfo{}, ReservationInfo{}, err
 	}
 	user := UserInfo{
 		Name:    userResponse.GetName(),
@@ -55,11 +57,29 @@ func (s *Service) ScanQR(ctx context.Context, userID string, reservationID strin
 		Phone:   userResponse.GetPhone(),
 		Email:   userResponse.GetEmail(),
 	}
-
-	//TODO: call method GetUserByID from another microservice
-	//TODO: retrieve data from microservice (synchronously)
-	//TODO: write it in userInfo structure
-	return user, RestaurantInfo{}, nil
+	reservationConn, err := s.dialog.NewConnection(s.dialog.Addresses.Reservations)
+	defer reservationConn.Close()
+	if err != nil {
+		return UserInfo{}, RestaurantInfo{}, ReservationInfo{}, err
+	}
+	reservationClient := proto_reservation.NewReservationClient(reservationConn)
+	reservationResponse, err := reservationClient.GetReservation(ctx, &proto_reservation.IDRequest{Id: reservationID})
+	if reservationResponse.GetUserID() != userID {
+		return UserInfo{}, RestaurantInfo{}, ReservationInfo{}, domain.ErrUnauthorized
+	}
+	if err != nil {
+		return UserInfo{}, RestaurantInfo{}, ReservationInfo{}, err
+	}
+	reservation := ReservationInfo{
+		Table:           reservationResponse.Table.GetTableNumber(),
+		ReservationTime: reservationResponse.GetReservationTime(),
+	}
+	restaurant := RestaurantInfo{
+		Name:    reservationResponse.Table.Restaurant.GetName(),
+		Contact: reservationResponse.Table.Restaurant.GetContact(),
+		Address: reservationResponse.Table.Restaurant.GetAddress(),
+	}
+	return user, restaurant, reservation, nil
 }
 
 func (s *Service) GenerateQRWithWatermark(watermark []byte, content string) ([]byte, error) {

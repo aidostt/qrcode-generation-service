@@ -7,8 +7,12 @@ import (
 )
 
 type RestaurantInfo struct {
-	Name            string
-	Address         string
+	Name    string
+	Address string
+	Contact string
+}
+
+type ReservationInfo struct {
 	Table           int32
 	ReservationTime string
 }
@@ -20,15 +24,9 @@ type UserInfo struct {
 	Email   string
 }
 
-type QRCodeInput struct {
-	Restaurant RestaurantInfo
-	User       UserInfo
-	Size       int
-}
-
 type QRCode interface {
 	GenerateQR(string) ([]byte, error)
-	ScanQR(context.Context, string, string) (UserInfo, RestaurantInfo, error)
+	ScanQR(context.Context, string, string) (UserInfo, RestaurantInfo, ReservationInfo, error)
 	GenerateQRWithWatermark([]byte, string) ([]byte, error)
 	AddWatermark([]byte, []byte) ([]byte, error)
 	ResizeWatermark(io.Reader, uint) ([]byte, error)
