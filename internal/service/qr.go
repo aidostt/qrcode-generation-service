@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	size = 256
+	size = 128
 )
 
 type Service struct {

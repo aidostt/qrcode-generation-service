@@ -46,8 +46,8 @@ func (h *Handler) Scan(ctx context.Context, input *proto.ScanRequest) (*proto.Sc
 		UserEmail:         user.Email,
 		RestaurantName:    restaurant.Name,
 		RestaurantAddress: restaurant.Address,
-		//RestaurantContact: restaurant.Contact,
-		TableID:         reservation.Table,
-		ReservationTime: reservation.ReservationTime,
+		RestaurantContact: restaurant.Contact,
+		TableID:           reservation.Table,
+		ReservationTime:   reservation.ReservationTime,
 	}, nil
 }
