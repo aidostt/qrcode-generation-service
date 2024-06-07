@@ -4,10 +4,10 @@ grpc:
 
 
 userMicroservice:
-  host: localhost
+  host: authentication-service
   port: 5050
 
 
 reservationMicroservice:
-  host: localhost
+  host: reservation-service
   port: 9090
